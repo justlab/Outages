@@ -4,7 +4,7 @@ suppressPackageStartupMessages(
     loadNamespace("lubridate")
     loadNamespace("jsonlite")})
 
-config = jsonlite::fromJSON("config.json")
+config = jsonlite::fromJSON(here::here("config.json"))
 
 outages = function()
   # Read outage data from the database and return it as a data table.
