@@ -85,7 +85,7 @@ def init_db():
               -- The next timepoint we need to fetch.
               -- If null, start from the beginning of the data.''')
         db.execute(
-           '''create table Events
+            '''create table Events
                (site      integer not null,
                 ilon      integer not null,
                 ilat      integer not null,
