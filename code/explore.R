@@ -29,6 +29,16 @@ d[lon == -74.12831 & lat == 40.59905, ]
 # (so cust_a == 1628 doesn't make sense there)
 mapview(st_as_sf(d[lon == -74.12831 & lat == 40.59905, ], coords = c("lon", "lat"), crs = 4326))
 
+# what else was happening around that time?
+badtime <- d[lon == -74.12831 & lat == 40.59905, range(time)]
+d[time > min(badtime) - 1800 & time < max(badtime) + 1800, ]
+mapview(st_as_sf(d[time > min(badtime) - 1800 & time < max(badtime) + 1800, ], coords = c("lon", "lat"), crs = 4326))
+# plotting what was happening around then just in staten island
+ggplot(d[time > min(badtime) - 1800 & time < max(badtime) + 1800 & lon > -74.137 & lon < -74.117, ]) + 
+  aes(x = time, y = reported_problem, size = cust_a) + 
+  geom_point(alpha = 0.2)
+
+
 # are there a lot of certain kinds of problems?
 d[, table(reported_problem)]
 d[, mean(cust_a), by = c("reported_problem")]
