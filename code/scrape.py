@@ -18,6 +18,7 @@ with open('config.json') as config:
     config = json.load(config)
 
 sleep_range_seconds = (.5, 2)
+max_tries = 3
 
 # We decided on these numbers based on exhaustive checks of data
 # availability with the first few days of July 2020 and 2021 in tile
@@ -60,6 +61,10 @@ def point_in_tile(p, tile):
     lat_min, lon_min = tile.to_geo(pyquadkey2.quadkey.TileAnchor.ANCHOR_SW)
     lat_max, lon_max = tile.to_geo(pyquadkey2.quadkey.TileAnchor.ANCHOR_NE)
     return lon_min <= lon <= lon_max and lat_min <= lat <= lat_max
+
+def sleep():
+    print('Sleeping')
+    time.sleep(random.uniform(*sleep_range_seconds))
 
 # ------------------------------------------------------------
 # * Database setup
@@ -125,12 +130,16 @@ def scrape(site, the_time):
     while tiles:
         tile = tiles.pop(0)
 
+        tries = 0
         while True:
             r = requests.get('{}/{}/outages/{}.json'.format(
                 site['url_root'],
                 the_time.strftime('%Y_%m_%d_%H_%M_%S'),
                 tile))
-            if r.status_code == requests.codes.forbidden:
+            tries += 1
+            if r.ok:
+                break
+            elif r.status_code == requests.codes.forbidden:
                 if tile == site['top_tiles'][0]:
                     # Data for this hour may be available at a later
                     # timestamp.
@@ -140,14 +149,15 @@ def scrape(site, the_time):
                     if the_time - time_initial > subquery_time_max_dist:
                         # Give up.
                         break
+                    tries = 0
                     continue
                 else:
                     # This tile seems to be just plain missing, and there's
                     # nothing we can do.
                     break
-            r.raise_for_status()
-            break
-
+            elif tries >= max_tries:
+                 raise ValueError('Retries exceeded:', r.url, r.status_code, r.reason)
+            sleep()
         if not r.ok:
             continue
 
@@ -268,8 +278,7 @@ def main():
                 'update Jobs set time_next = ? where job_id = ?',
                 (int(time_next.timestamp()), job_id))
 
-        print('Sleeping')
-        time.sleep(random.uniform(*sleep_range_seconds))
+        sleep()
 
 if __name__ == '__main__':
     try:
