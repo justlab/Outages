@@ -1,5 +1,5 @@
 {
-    "db.path": "/data-belle/Outages/outages.sqlite",
+    "db.path": "/scratch/arferk01/outages.sqlite",
     "polyline.precision": 5,
     "enum.cols": ["cause", "crew_status", "reported_problem"]
 }
