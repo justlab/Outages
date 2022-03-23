@@ -18,8 +18,9 @@ with open('config.json') as config:
     config = json.load(config)
 
 sleep_ranges_seconds = dict(
-    between_times = (.5, 2),
+    between_requests = (.5, 2),
     retry = (15*60, 16*60))
+request_sleep_interval = 30
 max_tries = 3
 
 # We decided on these numbers based on exhaustive checks of data
@@ -65,8 +66,18 @@ def point_in_tile(p, tile):
     return lon_min <= lon <= lon_max and lat_min <= lat <= lat_max
 
 def sleep(k):
-    print('Sleeping')
+    print('Sleeping', end = '', flush = True)
     time.sleep(random.uniform(*sleep_ranges_seconds[k]))
+    print(' - done')
+
+n_requests = 0
+def sleepy_get(*args, **kwargs):
+    r = requests.get(*args, **kwargs)
+    global n_requests
+    n_requests += 1
+    if n_requests % request_sleep_interval == 0:
+        sleep('between_requests')
+    return r
 
 # ------------------------------------------------------------
 # * Database setup
@@ -134,7 +145,7 @@ def scrape(site, the_time):
 
         tries = 0
         while True:
-            r = requests.get('{}/{}/outages/{}.json'.format(
+            r = sleepy_get('{}/{}/outages/{}.json'.format(
                 site['url_root'],
                 the_time.strftime('%Y_%m_%d_%H_%M_%S'),
                 tile))
@@ -279,8 +290,6 @@ def main():
             db.execute(
                 'update Jobs set time_next = ? where job_id = ?',
                 (int(time_next.timestamp()), job_id))
-
-        sleep('between_times')
 
 if __name__ == '__main__':
     try:
