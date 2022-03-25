@@ -17,7 +17,9 @@ from pypolyline.cutil import decode_polyline
 with open('config.json') as config:
     config = json.load(config)
 
-sleep_range_seconds = (.5, 2)
+sleep_ranges_seconds = dict(
+    between_times = (.5, 2),
+    retry = (15*60, 16*60))
 max_tries = 3
 
 # We decided on these numbers based on exhaustive checks of data
@@ -62,9 +64,9 @@ def point_in_tile(p, tile):
     lat_max, lon_max = tile.to_geo(pyquadkey2.quadkey.TileAnchor.ANCHOR_NE)
     return lon_min <= lon <= lon_max and lat_min <= lat <= lat_max
 
-def sleep():
+def sleep(k):
     print('Sleeping')
-    time.sleep(random.uniform(*sleep_range_seconds))
+    time.sleep(random.uniform(*sleep_ranges_seconds[k]))
 
 # ------------------------------------------------------------
 # * Database setup
@@ -157,7 +159,7 @@ def scrape(site, the_time):
                     break
             elif tries >= max_tries:
                  raise ValueError('Retries exceeded:', r.url, r.status_code, r.reason)
-            sleep()
+            sleep('retry')
         if not r.ok:
             continue
 
@@ -278,7 +280,7 @@ def main():
                 'update Jobs set time_next = ? where job_id = ?',
                 (int(time_next.timestamp()), job_id))
 
-        sleep()
+        sleep('between_times')
 
 if __name__ == '__main__':
     try:
