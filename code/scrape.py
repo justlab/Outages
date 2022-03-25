@@ -65,8 +65,12 @@ def point_in_tile(p, tile):
     lat_max, lon_max = tile.to_geo(pyquadkey2.quadkey.TileAnchor.ANCHOR_NE)
     return lon_min <= lon <= lon_max and lat_min <= lat <= lat_max
 
+def msg(*args, **kwargs):
+    print(time.strftime('%Y-%m-%d %H:%M:%S - '), end = '')
+    print(*args, **kwargs)
+
 def sleep(k):
-    print('Sleeping', end = '', flush = True)
+    msg('Sleeping', end = '', flush = True)
     time.sleep(random.uniform(*sleep_ranges_seconds[k]))
     print(' - done')
 
@@ -120,8 +124,8 @@ def init_db():
             db.execute(f'''create table Enumeration_{ec}
                (code integer primary key,
                 meaning text unique not null)''')
-        print('A new database was created.')
-        print('Add one or more jobs with `sqlite3`, then run this program again to start scraping.')
+        msg('A new database was created.')
+        msg('Add one or more jobs with `sqlite3`, then run this program again to start scraping.')
         exit()
 
     enums = {
@@ -272,7 +276,7 @@ def main():
             where time_next is null or time_next <= time_max
             order by job_id limit 1'''))
         if not job:
-            print('All jobs done.')
+            msg('All jobs done.')
             return
         (job_id, site, time_next), = job
         site = sites[site]
@@ -280,10 +284,10 @@ def main():
             if time_next
             else datetime.combine(site['date_min'], Time(), site['tz']))
 
-        print(f'Scraping job {job_id}, site {site["name"]}, time {time_next}')
+        msg(f'Scraping job {job_id}, site {site["name"]}, time {time_next}')
         events, time_actual = scrape(site, time_next)
 
-        print('Writing')
+        msg('Writing')
         with db:
             save(site, events, time_actual)
             time_next += query_time_increment
