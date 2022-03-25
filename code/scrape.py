@@ -288,12 +288,13 @@ def main():
         events, time_actual = scrape(site, time_next)
 
         msg('Writing')
-        with db:
-            save(site, events, time_actual)
-            time_next += query_time_increment
-            db.execute(
-                'update Jobs set time_next = ? where job_id = ?',
-                (int(time_next.timestamp()), job_id))
+        db.execute('begin')
+        save(site, events, time_actual)
+        time_next += query_time_increment
+        db.execute(
+            'update Jobs set time_next = ? where job_id = ?',
+            (int(time_next.timestamp()), job_id))
+        db.execute('commit')
 
 if __name__ == '__main__':
     try:
