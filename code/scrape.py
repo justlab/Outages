@@ -215,7 +215,7 @@ def save(site, events, the_time):
     if not events:
         return
 
-    out = []
+    out = set()
     global enums
 
     # Loop through `events` to update `enums` and make rows for `out`.
@@ -228,7 +228,7 @@ def save(site, events, the_time):
             if outage_desc[ec]:
                 enums[ec].setdefault(outage_desc[ec], len(enums[ec]))
 
-        d = dict(
+        out.add(tuple(dict(
             site = site['code'],
             ilon = round(lon * 10**config['polyline.precision']),
             ilat = round(lat * 10**config['polyline.precision']),
@@ -244,9 +244,7 @@ def save(site, events, the_time):
                            outage_desc['etr']))
                    .timestamp())),
             **{ec: outage_desc[ec] and enums[ec][outage_desc[ec]]
-                for ec in config['enum.cols']})
-        if d not in out:
-            out.append(d)
+                for ec in config['enum.cols']}).items()))
 
     # Update the database. (This function doesn't itself initiate a
     # transaction, but it's called inside a transaction.)
@@ -254,11 +252,11 @@ def save(site, events, the_time):
         db.executemany(
             f'insert or ignore into Enumeration_{ec} values (?, ?)',
             ((code, meaning) for (meaning, code) in enums[ec].items()))
-    db.executemany(
+    db.cursor().executemany(
         'insert into Events ({}) values ({})'.format(
-            ', '.join(sorted(out[0].keys())),
-            ', '.join(':' + k for k in sorted(out[0].keys()))),
-        out)
+            ', '.join(sorted(k for k, _ in next(iter(out)))),
+            ', '.join(sorted(':' + k for k, _ in next(iter(out))))),
+        map(dict, out))
 
 # ------------------------------------------------------------
 # * Mainline code
