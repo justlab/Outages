@@ -76,7 +76,10 @@ def sleep(k):
 
 n_requests = 0
 def sleepy_get(*args, **kwargs):
-    r = requests.get(*args, **kwargs)
+    try:
+        r = requests.get(*args, **kwargs)
+    except requests.exceptions.RequestException:
+        r = None
     global n_requests
     n_requests += 1
     if n_requests % request_sleep_interval == 0:
@@ -154,9 +157,9 @@ def scrape(site, the_time):
                 the_time.strftime('%Y_%m_%d_%H_%M_%S'),
                 tile))
             tries += 1
-            if r.ok:
+            if r:
                 break
-            elif r.status_code == requests.codes.forbidden:
+            elif r is not None and r.status_code == requests.codes.forbidden:
                 if tile == site['top_tiles'][0]:
                     # Data for this hour may be available at a later
                     # timestamp.
@@ -173,9 +176,12 @@ def scrape(site, the_time):
                     # nothing we can do.
                     break
             elif tries >= max_tries:
-                 raise ValueError('Retries exceeded:', r.url, r.status_code, r.reason)
+                 raise ValueError('Retries exceeded:', *(
+                     ['exception']
+                         if r is None
+                         else [r.url, r.status_code, r.reason]))
             sleep('retry')
-        if not r.ok:
+        if not r:
             continue
 
         for outage in r.json()['file_data']:
