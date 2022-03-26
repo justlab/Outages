@@ -36,7 +36,8 @@ sites = [{'code': i, **d} for i, d in enumerate([
         name = 'nyc',
         url_root = 'https://outagemap.coned.com/resources/data/external/interval_generation_data',
         tz = ZoneInfo('America/New_York'),
-        top_tiles = (pyquadkey2.quadkey.from_str('03201011'),),
+        top_tiles = tuple(map(pyquadkey2.quadkey.from_str,
+            ('03201011', '03023233'))),
         date_min = date(2020, 2, 19))])]
 
 na_like_values = ('Not Supplied',)
