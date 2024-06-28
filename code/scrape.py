@@ -78,10 +78,14 @@ def sleep(k):
     time.sleep(random.uniform(*sleep_ranges_seconds[k]))
     print(' - done')
 
+import urllib3; urllib3.disable_warnings()
+  # Disables a warning for using `verify = False` in requests.
 n_requests = 0
 def sleepy_get(*args, **kwargs):
     try:
-        r = requests.get(*args, **kwargs)
+        r = requests.get(*args, **kwargs, verify = False)
+          # HTTPS is not necessary, and (as of 28 Jun 2024) causes
+          # certificate errors on Belle.
     except requests.exceptions.RequestException:
         r = None
     global n_requests
