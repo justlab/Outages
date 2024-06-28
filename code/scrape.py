@@ -4,7 +4,10 @@
 it in a SQLite database.'''
 
 import os, re, random, time, json, sqlite3
-from backports.zoneinfo import ZoneInfo
+try:
+    from zoneinfo import ZoneInfo
+except ModuleNotFoundError:
+    from backports.zoneinfo import ZoneInfo
 from datetime import datetime, date, time as Time, timedelta
 
 import requests, pyquadkey2.quadkey
